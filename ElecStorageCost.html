@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<head>
+  <meta charset='utf-8'>
+</head>
+
+<body>
+
+<script src='https://d3js.org/d3.v4.min.js'></script>
+
+<style>
+
+<!--
+MEMENTO precedence of attributes
+From least specific (low priority) to most specific (high priority) :
+element type < class < ID < style
+-->
+
+<!--
+MEMENTO javascript : variable scope
+a= declares a in the global scope
+var a= declares a in the current function (or global if not inside function)
+let a= declares a in the current block {} (or global if not inside block)
+for (var i=;;) has the same scope as var i=;
+for (let i=;;) declares i in the scope of the loop only
+-->
+
+body {
+  background-color: #ffffff;
+}
+
+ul#tabs { list-style-type: none; margin: 30px 0 0 0; padding: 0 0 0.3em 0; }
+ul#tabs li { display: inline; }
+ul#tabs li a { color: #42454a; background-color: #dedbde; border: 1px solid #c9c3ba; border-bottom: none; padding: 0.3em; text-decoration: none; }
+ul#tabs li a:hover { background-color: #f8f8f8; }
+ul#tabs li a.selected { color: #000; background-color: #f8f8f8; font-weight: bold; padding: 0.3em 0.3em 0.45em 0.3em;}
+div.tabContent { border: 1px solid #c9c3ba; padding: 0.5em; background-color: #f8f8f8; }
+div.tabContent.hide { display: none; }
+
+li {
+  margin: 0 0;
+}
+
+emph {
+	background-color:#FFFF00;
+}
+
+.cost_path {
+    fill: none;
+    pointer-events: none;	/* Allows white_rect to capture events even if the lines are above it and cursor crosses the lines */
+	stroke-width: 3;
+	opacity:0.5;
+}
+
+.ref_path {
+    fill: none;
+    pointer-events: none;	/* Allows white_rect to capture events even if the lines are above it and cursor crosses the lines */
+	stroke-width: 1;
+	opacity:1;
+    stroke-dasharray:5;
+}
+
+.ma_courbe_betap {
+    fill: none;
+    stroke: blue;
+    stroke-width: 2;
+    opacity: 0.7;
+}
+
+.label_betap {
+    font: 11px sans-serif;		
+	fill: blue;
+}
+
+.ma_courbe_betac {
+    fill: none;
+    stroke: red;
+    stroke-width: 2;
+    opacity: 0.7;
+}
+
+.label_betac {
+    font: 11px sans-serif;		
+	fill: red;
+}
+
+.beta_legend {
+    font: 11px sans-serif;		
+}
+
+.label_cost_elec {
+    position: absolute;			
+    font: 12px sans-serif;		
+	fill: black;
+}
+
+.mon_axe_des_x {
+    font: 12px sans-serif;		
+}
+
+.mon_axe_des_y {
+    font: 12px sans-serif;		
+}
+
+.grid .tick {
+    opacity: 0.15;
+    stroke-width: 1;
+}
+.grid path {
+     stroke: #f0f0f0;
+     stroke-width: 0;
+}
+
+div.tooltips {	
+    position: absolute;			
+    text-align: left;			
+    padding: 5px;				
+    font: 12px sans-serif;		
+    border: 5px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}
+
+.select {
+    display: block;
+}
+
+.svg {
+    display: block;
+}
+
+.hbox {
+    display: flex;
+}
+.vbox {
+    display: flex;
+	flex-direction: column;
+}
+
+div.boxtitle {
+	font-weight: bold;
+	text-align: center;
+	margin-bottom: 0.5em;
+}
+
+.storbox {
+    border: 1px solid;
+	display: flex;
+	flex-direction: column;
+	margin: 5px;
+}
+
+.devbox {
+    border: 1px solid;
+	background-color:#eeeeee;
+    display: none;
+	flex-direction: column;
+	margin: 2px;
+	margin-left: 20px;
+}
+
+.prodbox {
+    border: 1px solid;
+	background-color: #fdf1b8;
+    display: flex;
+	flex-direction: column;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.sbox {
+    border: 1px solid;
+	background-color: #fdf1b8;
+    display: flex;
+	flex-direction: column;
+}
+
+.element {
+	margin: 3px;
+}
+
+.Del {
+	background-color: lightsteelblue;
+    align-self: center;
+}
+
+.fill{
+	margin:auto;
+}
+
+table, th {
+	border-collapse: collapse;
+	border: 1px solid black;
+	text-align: center;
+}
+td {
+	border-left: 1px solid black;
+	text-align: center;
+	padding: 3px;
+}
+
+.legend {
+    display: flex;
+	justify-content: center;
+	margin-top: 5px;
+	margin-bottom: 10px;
+}
+
+.legend-item {
+	display:flex;
+    font: 12px sans-serif;		
+	margin-left:10px;
+	margin-right:10px;
+}
+
+.legend-line {
+	margin-top:auto;
+	margin-bottom:auto;
+	margin-right:5px;
+}
+
+</style>
+
+
+<h1>Cost of storage for managing electricity production intermittency</h1>
+
+<ul id="tabs">
+  <li><a href="#presentation">Presentation</a></li>
+  <li><a href="#input_data">Input data</a></li>
+  <li><a href="#tool">The tool</a></li>
+  <li><a href="#interpretation">Interpretation</a></li>
+  <li><a href="#references">References</a></li>
+  <li><a href="#about">About</a></li>
+</ul>
+	
+<div class="tabContent" id="presentation">
+
+	<div>
+		<p>The tool presented here is designed to provide an intuitive grasp of how difficult it may be to use electricity
+		storage in order to deal with the intermittency of electricity consumption and production.<br>
+		To this end, we analyse the cost of storage as of function of the timescale considered, as the answer is clearly
+		different if we want to store electricity between day and night, or between summer and winter.</p>
+		<p>It is very simplified in the sense that it considers a single charge-discharge cycle, with a square shape, supposed
+		to be repeated indefinitely.<br>
+		Of course, real signals are far from this shape, but this toy model provides valuable insights that can be extrapolated
+		to the analysis of realistic signals, as shown in [2].<br>
+		Additionnally,any signal can be decomposed over a basis of such square functions [1].<br>
+		A very interesting feature is to look at is the influence of the timescale : are we trying to store electricity for one
+		hour ? one day ? one month ? one year ?</p>
+		<h4>Calculations</h4>
+		<p>The <b><i>flexibility service</i></b> is defined as the electricity needed to fill the gap when electricity
+		production is not sufficient to meet consumption.<br>
+		It is represented by the hatched area in the production and consumption input data box.</p>
+		<p>For each time scale &#x394;t, the tool calcultates the energy and power necessary to provide the flexibility
+		service.<br>
+		For each storage, it can therefore calculate the size and cost of every device composing the storage.<br>
+		From this, it can evaluates the lifetime of the device in these operating conditions.</p>
+		<p>However, electricity storage cannot reach 100% efficiency. Therefore assuming it is charged when production is
+		greater	than consumption and discharged when production is lower than consumption, the energy lost in conversion is
+		missing to the consumer.<br>
+		This energy loss is compensated by <b><i>oversizing the production system</i></b>. We assume this oversizing follows
+		the	same production pattern with the same cost as the initial production system. Mathematical details are available in
+		[1], and the implementation is visible in the present file (function <i>calculate_line_data</i>).</p>
+		<p>Finally, the sum of all costs (storage + oversizing) over a period of time is divided by the flexibility service
+		provided during this same perdiod of time.</p>
+		<p>This gives the <b><i>cost of flexibility</i></b> using the considered storage, expressed per MWh of flexibility
+		service.<br>
+		This value allows to compare storages together, and with other flexibility options.
+		</p>
+	</div>
+
+</div> <!-- end of tab Presentation -->
+
+<div class="tabContent" id="input_data">
+	<p>The top frame ot the tool contains input data describing production and consumption.<br>
+	On the right are the input data describing each storage. A color is associated to each storage, which can itself comprise
+	a series of devices. The energy flows from each device to the next one.<br>
+	As data provided are not perfect and bear large uncertainties, the user is encouraged to change every input data, and will
+	immediately see the effect on the results.<br>
+	This shows that some conclusions are very robust despite the uncertainties in the input data.</p>
+	<h4>Consumption and production input data</h4>
+	<p>It is possible to choose a cost unit which will apply to all costs and allows to use other metrics than economics, for
+	example the GHG emissions.<br>
+	The electricity cost is described by a single value, which is the mean cost of electricity production over the period.<br>
+	The level of intermittency of production and consumption are also tunable, while maintaining the equality of mean
+	production and mean comsumption.<br>
+	A visual representation of the signals is provided, the time scale in abscissa spanning over a full charge-discharge cycle,
+	denoted as &#x394;t.<br>
+	The energy lacking when production is lower than consumption is represented by a hatched area and is called the flexibility
+	service.
+	</p>		
+	<h4>Storage input data</h4>
+	<p>The data for each storage is grouped inside a box of the same color as the corresponding curve.<br>
+	Clicking on the margin of the storage box toogles showing the devices that compose this storage.</p>
+	<p>It is necessary to separate a storage in various devices when some are scaled by energy while others are scaled by
+	power, or when they have different liftetimes.<br>
+	Each device cost may be either proportional to power or to energy, and these values (power or energy) may be taken as
+	entering or exiting the	device ('in'/'out'). The difference is linked to the device efficiency.<br>
+	If both costs are filled in for a same device, the most restrictive will apply, which depends on the intermittency
+	timescale (as energy/power=&#x394;t/2).<br>
+	Several life limits can be defined, either in years, in equivalent hours at full power, or in equivalent full cycles. The
+	most restrictive will apply which again depends on the intermittency timescale (as the number of cycles per year varies).
+	<br>
+	A device with 1000 equivalent hours at full power lifetime will be dead after 1000 hours of charging <i>or</i> discharging
+	at full power, thus after 2000 hours of cycling. If it does not cycle at full power, then the lifetime will increase
+	accordingly.<br>
+	Similarly a device with 1000 equivalent full cycles lifetime will be able to perform more cycles if each cycle does not use
+	100% of its energy.<br>
+	Finally, a life limit in equivalent hours at full power will only have effect if the cost of power is defined, and a life
+	limit in equivalent full cycles will only have effect if the cost of energy is defined.<br>
+	All the cost calculations over the life of a device are performed without any discount rate.
+	</p>
+</div>
+
+<div class="tabContent" id="tool">
+	<p>The above graph shows the <b><i>cost of the flexibility service</i></b> provided by storage :
+	<ul><li>the cost includes storage and production oversizing</li>
+	<li>the flexibility service is the amount of electricity provided to the consumer while production was insufficient
+	(hatched area)</li></ul>
+	</p>
+	<p>These costs are presented <b><i>depending on the timescale &#x394;t</i></b>, which is the duration of a charge-discharge
+	cycle. This timescale ranges from 1 hour to 1 year.<br>
+	A curve is associated to each storage, with the same color as the storage input data box.<br>
+	Additional details are provided hovering over the curves. Moreover, for each device of the storage, the life limit and cost
+	which are the most restrictive for this particular point are highlighted in the input data box.
+	</p>
+	<p>Two additional curves are provided for comparison purposes.<br>
+	The first one corresponds to a solution where the production is oversized but the excess is not stored ('Oversizing
+	alone').<br>
+	The second one (dashed line) is simply the mean electricity cost.<br>
+	Beware that <b><i>the cost of flexibility adds up to the mean electricity cost</i></b>, and does not replace it.
+	</p>
+</div>
+
+<div class="tabContent" id="interpretation">
+
+	<h4>What can be seen on the results</h4>
+	<ol>
+
+		<li><emph>The cost of flexibility rises sharply for large timescales of intermittency </emph>, as a larger amount of
+		storage has to be built and performs fewer cycles.<br>
+		In particular, and whatever the technology considered, storing excess electricity in summer to use it in winter is very
+		expensive.</li>
+
+		<li>In the presence of two storage technologies, one presenting a better efficiency, and the other one being cheaper,<br>
+		<emph>the storage with better efficiency is to be preferred for short timescales, while the cheaper storage is to be
+		preferred for long timescales.</emph><br>
+		More details on this point are available in [2].</li>
+	
+		<li><emph>A high cost of electricity is particularly detrimental to storages with low efficiency</emph><br>
+		Indeed, the higher are the losses, the larger is the required oversizing of production.</li>
+
+		<li><emph>Low efficiency storages are less suited to high production intermittency</emph>, as together they require an
+		even larger oversizing of production. Production intermittency can be thought of as linked to renewables penetration.<br>
+		On the contrary, for a lossless storage (100% efficiency), the cost of flexibility is independent of the production
+		intermittency, as the storage size just scales accordingly and no production oversizing is required.</li>
+		
+		<li><emph>The consumption intermittency has little impact</emph>, except to indicate whether electricity is missing while
+		production is high, or while production is low.<br>
+		Of course, the cost is higher in the second case.</li>
+	
+	</ol>
+	<p>In each of the above sentences, 'cost' can be substituted with 'environmental impact'.</p>
+
+	<h4>Limits of this tool</h4>
+	<ul>
+		<li><emph>The physical limits in the development of storages technologies are not taken into account.</emph><br>
+		For example, the number of sites for pumped hydro or the ressources in cobalt for Li-ion batteries are supposed infinite.</li>
+		<li>The only means of flexibility considered is the storage of electricity.<br>
+		Obviously, other flexibility means may be more efficient depending on the time scale.<br>
+		In particular, <emph>flexibility is today efficiently provided by dispatchable production</emph> (fossile fuels, hydro, or nuclear depending on the country).</li>
+		<li>The electricity system is considered isolated, while <emph>an integrated approach of the energy system is necessary.</emph><br>
+		For example, excess electricity could be converted into other forms of energy (e.g. heat or fuel) which are easier to store but not easily converted back into electricity.
+		At a later time when heat or fuel is used, it reduces the need for electricity.<br>
+		That way, the flexibility is obtained by changing the consumption pattern rather than the production pattern.</li>
+		<li>Production and consumption patterns are far from real ones.<br>
+		Further studies could be dedicated to specific scenarios in specific countries, which is not the goal of the present tool.<br>
+		Furthermore, <emph>it does not allow to understand the interrelationship between flexibility at short time scales and at large times scales.</emph><br>
+		Would a storage for long time scales necessarily manage also the short time scales ? Or would the optimum include a combination of storages ?<br>
+		Such issues are tackled in [2].
+		</li>
+	</ul>
+
+</div>
+
+<div class="tabContent" id="references">
+	<p>[1] A. Clerjon and F. Perdu, <a href='https://dx.doi.org/10.1039/c8ee01940a'>Matching intermittency and electricity storage characteristics through time scale analysis: an energy return on investment comparison</a>, <i>Energy Environ. Sci.</i>, 2019,<b>12</b>, 693-705<br>
+	[2] A. Clerjon and F. Perdu, <i>Matching intermittent electricity supply and load with energy storage: An optimization based on a time scale analysis</i>, to be published in ECOS 2020</p>
+</div>
+
+<div class="tabContent" id="about">
+	<p><u>Authors</u> : F. Perdu and A. Clerjon</p>
+	<p><b>Not to be distributed : data not yet validated</b></p>
+	<p>v0.6, 19/05/2020, tested on :
+	<ul>
+	<li>Chrome/Chromium 80.0.3987.149</li>
+	<li>Firefox 74.0</li>
+	<li>Edge 44.17763.831.0</li>
+	</ul>
+	<p>Sliders not working on Internet Explorer 11.1098.17763.0</p>
+</div>
+
+<script>
+
+
+// TODO
+
+// Allow to add/remove devices and storages
+
+// put everything in a single variable to allow saving in a json
+// perhaps keeping actual variable names as pointers towards inside the signe variable
+// or save in json the list of variables
+
+var cost_unit_list = ['€','kg(CO2)']; // Can be changed
+var cost_unit = '€'; // Can be changed
+
+var elec_cost = { // Value at production
+	'€': 60, // €/MWh
+	'kg(CO2)': 70// kg(CO2)/MWh
+};
+var elec_cost_max = { // end of slider
+	'€': 300, // €/MWh
+	'kg(CO2)': 1000// kg(CO2)/MWh
+};
+
+var betap = 0.5; // depth of intermittency
+var betac = 0.; // depth of intermittency
+
+// Data for each storage (later add dispatchable production)
+
+// One storage = array of devices
+// Each device has its own cost and lifetime
+// Cost can be relative to either energy or power, and either in or out of the device
+// Lifetime can in years of operation, in equivalent hours at full power, or in equivalent full cycles
+// Without at least one cost AND one lifetime, the device is free...
+// !! Lifetime in equivalent hours at full power has no effect without a cost of power
+// !! Power for lifetime in equivalent hours at full power is counted during either charge or discharge, not both
+// !! Lifetime in equivalent full cycles has no effect without a cost of energy
+var life_unit_list = ['years', 'eq. hours at full power', 'eq. full cycles'];
+var storage_data = [
+	{
+		'name': 'Li-ion',
+		'devices': [
+			{
+				'name': 'battery',
+				'efficiency': 0.85,
+				'life_limits': [
+					{'life': 15, 'life_unit': 'years'},
+					{'life': 5000, 'life_unit': 'eq. full cycles'}
+				],
+				'cost_reference': 'out',
+				'cost of energy':{ // /MWh
+					'€':300000,
+					'kg(CO2)':100000
+				},
+				'cost of power':{ // /MW
+					'€':300000,
+					'kg(CO2)':100000
+				}
+			}
+		]
+	},
+	{
+		'name': 'Pumped hydro',
+		'devices': [
+			{
+				'name': 'reservoir',
+				'efficiency': 1,
+				'life_limits': [
+					{'life': 60, 'life_unit': 'years'}
+				],
+				'cost_reference': 'out',
+				'cost of energy':{ // /MWh
+					'€':160000,
+					'kg(CO2)':0
+				}
+			},
+			{
+				'name': 'turbine',
+				'efficiency': 0.75,
+				'life_limits': [
+					{'life': 60, 'life_unit': 'years'}
+				],
+				'cost_reference': 'out',
+				'cost of power':{ // /MW
+					'€':2000000,
+					'kg(CO2)':0
+				}
+			}
+		]
+	},
+	{
+		'name': 'H2 with tanks', // From FCH-JU addendum, figure for 2020
+		'devices': [
+			{
+				'name': 'alcaline electrolyser', // Table 2.1
+				'efficiency': 0.6666, // PCI(H2) /electricity, based on 50kWh/kg(H2)
+				'life_limits': [
+					{'life': 80000, 'life_unit': 'eq. hours at full power'}
+				],
+				'cost_reference': 'in',
+				'cost of power':{
+					'€':725000, // CAPEX 600€/kW + OPEX 12.5€/kW/y * 10 years
+					'kg(CO2)':0
+				}
+			},
+			{
+				'name': 'tank', // Table 2.5
+				'efficiency': 1, // Optimistic
+				'life_limits': [
+					{'life': 20, 'life_unit': 'years'} // guess ??
+				],
+				'cost_reference': 'out',
+				'cost of energy':{ 
+					'€':10500, // 350€/kg(H2) = 10500€/MWh(LHV)
+					'kg(CO2)':0
+				}
+			},
+			{
+				'name': 'fuel cell stack', // Table 2.6.3
+				'efficiency': 0.45,
+				'life_limits': [
+					{'life': 40000, 'life_unit': 'eq. hours at full power'} // 20k-60k
+				],
+				'cost_reference': 'out',
+				'cost of power':{ 
+					'€':1200000, // OPEX 0.03€/kWh * 40000h
+					'kg(CO2)':0
+				}
+			},
+			{
+				'name': 'fuel cell system',
+				'efficiency': 1, // Normalize the cost by the same power as the stack
+				'life_limits': [
+					{'life': 25, 'life_unit': 'years'}
+				],
+				'cost_reference': 'out',
+				'cost of power':{
+					'€':2500000, // CAPEX 2000-3000 €/kW
+					'kg(CO2)':0
+				}
+			}
+		]
+	},
+	{
+		'name': 'Oversizing alone',
+	},
+]
+
+var colors=[];
+var faint_colors=[];
+fill_colors();
+
+var betaline, xb, yb;
+var svg;
+var table_body;
+var times=['1 hour', '1 day', '1 week', '1 month', '1 year'];
+
+line_data=[];
+alpha_data=[];
+tab_data=[];
+
+{ // instanciation of all the user data inputs
+
+	let bb = d3.select('#tool')
+			.append('div')
+			.attr('class', 'hbox')
+			.lower();
+
+	let tmp0 = bb.append('div')
+			.attr('class', 'vbox');
+	let tmp00 = tmp0.append('div')
+			.attr('class', 'prodbox');
+
+	{ //Production and cost unit
+		tmp00.append('div')
+			.attr('class', 'boxtitle')
+			.html('Electricity consumption and production input data');
+
+		{ // Cost unit
+			let tmp1 = tmp00.append('div')
+				.attr('class', 'hbox')
+				.style('align-items','flex-start');
+
+			tmp1.append('div')
+				.attr('class', 'element')
+				.text('Cost unit');
+
+			let select = tmp1.append('select')
+				.attr('class','element')
+				.attr('id','select_cost')
+				.on('change', function() {cost_unit=this.value; Update();})
+				.selectAll('option')
+				.data(cost_unit_list).enter()
+				.append('option')
+				.text(function (d) { return d })
+				.property('selected', function(d){ return d === '€'; });
+		}
+		{ // Production
+			let tmp1 = tmp00.append('div')
+				.attr('class', 'hbox')
+				.style('align-items','flex-start');
+
+			tmp1.append('div')
+				.attr('class', 'element')
+				.text('Electricity cost');
+
+			tmp1.append('input')
+				.attr('class', 'element')
+				.attr('id','elec_cost_slider')
+				.attr('type','range')
+				.attr('min',0)
+				.on('input',function(){ elec_cost[cost_unit]=this.value; Update();});
+
+			tmp1.append('input')
+				.attr('class', 'element')
+				.style('text-align','right')
+				.style('width','4em')
+				.attr('type','number')
+				.attr('id','elec_cost_input')
+				.attr('min',0)
+				.on('input',function(){ elec_cost[cost_unit]=this.value; Update();});
+				
+			tmp1.append('div')
+				.attr('class', 'element')
+				.attr('name','cost_per_energy');
+		}	
+	}
+	{ // beta
+		let tmp1 = tmp00.append('div')
+			.attr('class', 'hbox');
+
+		{ // sliders
+			let tmp2 = tmp1.append('div')
+				.attr('class', 'vbox')
+				.style('align-items','flex-end')
+				.style('justify-content','center');
+
+			let tmp3 = tmp2.append('div')
+				.attr('class', 'hbox')
+				.style('justify-content','flex-end');
+
+			tmp3.append('div')
+				.attr('class', 'element')
+				.text('production intermittency');
+
+			tmp3.append('input')
+				.attr('class', 'element')
+				.attr('id','betap_slider')
+				.attr('type','range')
+				.attr('min',-1)
+				.attr('max',1)
+				.attr('step',0.01)
+				.on('input', function() { betap=parseFloat(this.value); Update();});
+				
+			tmp3.append('input')
+				.attr('class', 'element')
+				.style('text-align','right')
+				.style('width','4em')
+				.attr('type','number')
+				.attr('id','betap_input')
+				.attr('min',-1)
+				.attr('max',1)
+				.attr('step',0.01)
+				.on('change',function(){
+					betap=parseFloat(this.value);
+					if(betap<-1) betap=-1;
+					if(betap>1) betap=1;
+					Update();
+				});
+
+			tmp3 = tmp2.append('div')
+				.attr('class', 'hbox')
+				.style('justify-content','flex-end');
+
+			tmp3.append('div')
+				.attr('class', 'element')
+				.text('consumption intermittency');
+
+			tmp3.append('input')
+				.attr('class', 'element')
+				.attr('id','betac_slider')
+				.attr('type','range')
+				.attr('min',-1)
+				.attr('max',1)
+				.attr('step',0.01)
+				.on('input', function() {betac=parseFloat(this.value); Update();});
+
+			tmp3.append('input')
+				.attr('class', 'element')
+				.style('text-align','right')
+				.style('width','4em')
+				.attr('type','number')
+				.attr('id','betac_input')
+				.attr('min',-1)
+				.attr('max',1)
+				.attr('step',0.01)
+				.on('change',function(){
+					betac=parseFloat(this.value);
+					if(betac<-1) betac=-1;
+					if(betac>1) betac=1;
+					Update();});
+
+		}
+		{ // SVG for beta
+			let tmp2 = tmp1.append('div')
+				.attr('class', 'vbox')
+				.style('align-items','center');
+		
+			let svgb = tmp2.append('svg')
+				.attr('class','svg')
+				.attr('class', 'element')
+				.attr('width', 250)
+				.attr('height', 130);
+			svgb
+			.append('defs')
+				.append('pattern')
+					.attr('id', 'diagonalHatch')
+					.attr('patternUnits', 'userSpaceOnUse')
+					.attr('width', 4)
+					.attr('height', 4)
+					.append('path')
+						.attr('d', 'M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2')
+						.attr('stroke', '#000000')
+						.attr('stroke-width', 1);
+
+			let marginb = {top: 15, right: 10, bottom: 20, left: 40},
+				widthb = svgb.attr('width') - marginb.left - marginb.right,
+				heightb = svgb.attr('height') - marginb.top - marginb.bottom;
+
+			// Create the x scale (function converting a date to x position in rectangle)
+			xb = d3.scaleLinear().range([0, widthb]).domain([0, 1]);
+			// Create the y scale (function converting a value to y position in rectangle)
+			yb = d3.scaleLinear().range([heightb, 0]).domain([0,2]);
+			// Create x and y axis using the above scales (functions used to draw the axis)
+			let xbAxis = d3.axisBottom(xb).tickValues(d3.range(0,1,0.25)),
+				ybAxis = d3.axisLeft(yb).tickValues([0,0.5,1.5,2]);
+				
+			let gb = svgb.append('g')
+				.attr('transform', 'translate(' + marginb.left + ',' + marginb.top + ')');
+			gb.append('g')
+				.attr('transform', 'translate(0,' + heightb + ')')
+				.call(xbAxis)
+				.append('text')
+				.attr('transform', 'translate(' + widthb + ', 0)')
+				.attr('dy', '1.5em')
+				.attr('text-anchor', 'end')
+				.attr('fill', '#000')
+				.text('1=\u0394t');
+			let tmp3=gb.append('g')
+				.call(ybAxis);
+			tmp3.append('text')
+				.attr('fill', '#000')
+				.attr('transform', 'rotate(-90)')
+				.attr('dy', '-2.6em')
+				.attr('text-anchor', 'end')
+				.text('Power');
+			tmp3.append('text')
+				.attr('fill', '#000')
+				.attr('y', yb(1))
+				.attr('dx', '-0.3em')
+				.attr('text-anchor', 'end')
+				.text('mean');
+			
+			betaline = d3.line()
+				.x(function(d) { return xb(d[0]); })
+				.y(function(d) { return yb(d[1]); });
+
+			gb.append('rect')
+				.attr('id', 'service_rectangle')
+				.style('fill','url(#diagonalHatch)');
+
+			gb.append('path')
+				.attr('class', 'ma_courbe_betap');
+
+			gb.append('text')
+				.attr('class', 'label_betap')
+				.text('Production');
+
+			gb.append('path')
+				.attr('class', 'ma_courbe_betac');
+
+			gb.append('text')
+				.attr('class', 'label_betac')
+				.text('Consumption');
+				
+			tmp2.append('div')
+				.attr('class','beta_legend')
+				.html('Flexibility service is hatched area')
+		}
+	}
+
+
+	svg = tmp0.append('svg')
+		.attr('class','svg')
+		.attr('class', 'element')
+		.attr('width', 800)
+		.attr('height', 400);
+		
+	legend =tmp0.append('div')
+		.attr('class','legend');
+	
+	{
+		let tab=tmp0.append('table');
+		let table_head=tab.append('thead').append('tr');
+		table_head.append('th').text('Timescale \u0394t');
+		times.forEach(function(d) {table_head.append('th').text(d);})
+		table_body=tab.append('tbody');
+	}
+	
+	{ // Storage parameters
+
+		let params = bb.append('div')
+			.attr('class','sbox');
+//			.style('flex-grow',1);
+			
+		params.append('div')
+			.attr('class', 'boxtitle')
+			.html('Storage input data');
+
+		storage_data.forEach(create_storage);
+		
+		function create_storage(d,i){ // for each storage
+			
+			if (!('devices' in d))	// Do not create box for oversazing alone
+				return;
+				
+			let storage_box = params.append('div')
+				.attr('class', 'storbox')
+				.datum(d)
+				.style('background-color',colors[i])
+				.on('click', function() { show_storage(i);});
+				
+			storage_box.append('input')
+				.attr('class', 'element')
+				.attr('type','text')
+				.attr('value',d['name'])
+				.on('change',function() {d['name']=this.value; Update();});
+			
+			if ('devices' in d)			
+				d['devices'].forEach(create_device, storage_box); // send storage_box as this to create_device
+			
+			// To keep some room for clicking once devices are hidden.
+			// Not very clean...
+			storage_box.append('div')
+				.html('&#183;&#183;&#183;')
+				.style('margin-right','auto')
+				.style('pointer-events','none');
+		}
+
+		function create_device(d){ // for each device
+
+			let device_box = this.append('div')
+				.datum(d)
+				.attr('class', 'devbox')
+				.attr('name','device');
+
+			{
+				var name_box=device_box.append('div')
+					.attr('class', 'hbox');
+
+				name_box.append('input')
+					.attr('class', 'element')
+					.attr('type','text')
+					.attr('value',d['name'])
+					.on('change',function() {d['name']=this.value; Update();});
+
+				name_box.append('div')
+					.attr('class','fill');
+
+				name_box.append('input')
+					.attr('class', 'Del')
+					.attr('type','button')
+					.attr('value','+cost')
+					.on('click',function() {
+						box = d3.select(this.parentNode.parentNode);
+						box.select('[name=costEbox').remove();
+						box.select('[name=costPbox').remove();
+						if (!('cost of energy' in d)){
+							d['cost of energy']={};
+							for (let u in cost_unit_list){
+								d['cost of energy'][cost_unit_list[u]]=0;
+							}
+						}
+						if (!('cost of power' in d)){
+							d['cost of power']={};
+							for (let u in cost_unit_list){
+								d['cost of power'][cost_unit_list[u]]=0;
+							}
+						}
+						create_cost(d,box);
+						Update();}
+						);
+					
+				name_box.append('input')
+					.attr('class', 'Del')
+					.attr('type','button')
+					.attr('value','+life')
+					.on('click',function() {
+						box = d3.select(this.parentNode.parentNode);
+						box.selectAll('[name=lbox]').remove();
+						d['life_limits'].push({'life':1,'life_unit':'years'});
+						create_life(d['life_limits'],box);
+						Update();
+					});
+			}
+
+			{
+				let ref_box=device_box.append('div')
+					.attr('class', 'hbox');
+
+				ref_box.append('text')
+					.attr('class', 'element')
+					.text('Costs are per energy ');
+
+				ref_box.append('text')
+					.attr('class', 'element')
+					.attr('name','cost_ref')
+					.datum(d);
+
+				ref_box.append('div')
+					.attr('class','fill');
+
+				ref_box.append('div')
+					.attr('class','fill');
+			
+				ref_box.append('input')
+					.attr('class', 'Del')
+					.attr('type','button')
+					.attr('value',d['cost_reference'])
+					.on('click',function() {
+						if (this.value=='in') {
+							this.value='out';
+							d['cost_reference']='out';
+							}
+						else {
+							this.value='in';
+							d['cost_reference']='in';
+							}
+						Update();
+					});
+			}
+
+
+			{
+				let eff_box=device_box.append('div')
+					.attr('class', 'hbox');
+
+				eff_box.append('text')
+					.attr('class', 'element')
+					.text('efficiency');
+
+				eff_box.append('input')
+					.attr('class', 'element')
+					.style('text-align','right')
+					.style('width','4em')
+					.attr('type','number')
+					.attr('min','0')
+					.attr('max','1')
+					.attr('step','0.05')
+					.attr('value',d['efficiency'])
+					.on('input',function() {d['efficiency']=parseFloat(this.value); Update();})
+					;
+			}				
+			create_cost(d,device_box);
+			create_life(d['life_limits'],device_box);
+		}
+
+		function create_cost(d,box) {	
+			if ('cost of energy' in d) {
+
+				let costE_box=box.append('div')
+					.attr('class', 'hbox')
+					.attr('name', 'costEbox');
+
+				costE_box.append('text')
+					.attr('class', 'element')
+					.text('cost of energy');		
+			
+				costE_box.append('input')
+					.attr('class', 'element')
+					.datum(d['cost of energy'])
+					.attr('name', 'costEinput')
+					.style('text-align','right')
+					.style('width','6em')
+					.attr('type','number')
+					.attr('min','0')
+					.attr('step','100')
+					.attr('value',d['cost of energy'][cost_unit])
+					.on('input',function() {d['cost of energy'][cost_unit]=parseFloat(this.value); Update();});
+
+				costE_box.append('div')
+					.attr('class', 'element')
+					.attr('name','cost_per_energy')
+					.datum(d);
+					
+				costE_box.append('div')
+					.attr('class','fill');
+
+				costE_box.append('input')
+					.attr('class', 'Del')
+					.attr('type','button')
+					.attr('value','Del')
+					.on('click',function() {delete d['cost of energy']; this.parentElement.remove(); Update();});
+
+			}
+			
+			if ('cost of power' in d) {
+			
+				let costP_box=box.append('div')
+					.attr('class', 'hbox')
+					.attr('name', 'costPbox');
+
+				costP_box.append('text')
+					.attr('class', 'element')
+					.text('cost of power');
+			
+				costP_box.append('input')
+					.attr('class', 'element')
+					.datum(d['cost of power'])
+					.attr('name', 'costPinput')
+					.style('text-align','right')
+					.style('width','6em')
+					.attr('type','number')
+					.attr('min','0')
+					.attr('step','100')
+					.attr('value',d['cost of power'][cost_unit])
+					.on('input',function() {d['cost of power'][cost_unit]=parseFloat(this.value); Update();});
+
+				costP_box.append('div')
+					.attr('class', 'element')
+					.attr('name','cost_per_power')
+					.datum(d);
+
+				costP_box.append('div')
+					.attr('class','fill');
+
+				costP_box.append('input')
+					.attr('class', 'Del')
+					.attr('type','button')
+					.attr('value','Del')
+					.on('click',function() {delete d['cost of power']; this.parentElement.remove(); Update();});
+			}
+
+		}
+
+		function create_life(d,box) {	
+			for (let l in d) {
+
+				let lbox=box.append('div')
+					.attr('class', 'hbox')
+					.attr('name', 'lbox')
+					.datum(d);
+
+				lbox.append('text')
+					.attr('class', 'element')
+					.text('Life limit');
+			
+				lbox.append('input')
+					.attr('class', 'element')
+					.datum(l)
+					.style('text-align','right')
+					.style('width','6em')
+					.attr('type','number')
+					.attr('min','0')
+					.attr('value',d[l]['life'])
+					.on('input',function(l) {d[l]['life']=parseFloat(this.value); Update();});
+
+				lbox.append('select')
+					.attr('class', 'element')
+					.datum(l)
+					.on('change',function(l) {d[l]['life_unit']=this.value; Update();})
+					.style('text-align','right')
+					.style('width','6em')
+					.selectAll('option')
+					.data(life_unit_list).enter()
+					.append('option')
+					.text(function (t) { return t })
+					.property('selected', function(t){ return t === d[l]['life_unit']; });
+
+				lbox.append('div')
+					.attr('class','fill');
+
+				lbox.append('input')
+					.attr('class', 'Del')
+					.datum(l)
+					.attr('type','button')
+					.attr('value','Del')
+					.on('click',function(l) {delete d[l]; this.parentElement.remove(); Update();});
+
+			}
+		}
+
+	}
+}
+
+show_storage(0);
+
+function show_storage(i) { // To show or hide inside the storage
+	d3.selectAll('.storbox').each(	function(d,ii) {
+			d3.select(this).selectAll('.devbox').style('display',ii==i?'flex':'none');
+	});
+}
+
+
+// Tooltips
+var tooltips=d3.select('#tool')
+	.append('div')
+	.attr('class','tooltips')
+	.style('display', 'none');
+
+var margin = {top: 20, right: 20, bottom: 20, left: 40},
+    width = svg.attr('width') - margin.left - margin.right,
+    height = svg.attr('height') - margin.top - margin.bottom;
+
+
+// Create first group of elements in svg
+var g = svg.append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+// Define a clip rectangle (otherwise the curve will be drawn also in the margins after zooming)
+defs = svg.append('defs')
+defs.append('clipPath')
+    .attr('id', 'clip')
+    .append('rect')
+    .attr('width', width)
+    .attr('height', height);
+
+
+// A scale is a function that takes a data value (in data domain) and converts it
+// to a position, a color, a size or other visual dimension (output range)
+// input data in domain -> output visual in range.
+
+// Create the x scale (function converting a date to x position in rectangle)
+var x = d3.scaleLog().range([0., width]);
+//var xt = x
+
+// Create the y scale (function converting a value to y position in rectangle)
+var y = d3.scaleLinear().range([height, 0]);
+var yt = y;
+
+
+// Create x and y axis using the above scales (functions used to draw the axis)
+var xAxis = d3.axisBottom(x)
+	.tickValues([1,6,24,168,730,8760])
+	.tickFormat(function(v){
+		if (v==1) return '1 hour';
+		else if (v==6) return '6 hours';
+		else if (v==24) return '1 day';
+		else if (v==168) return '1 week';
+		else if (v==730) return '1 month';
+		else if (v==8760) return '1 year';});
+var yAxis = d3.axisLeft(y) // For the ticks
+	.ticks(6);
+var yAxis1 = d3.axisLeft(y) // For the grid
+	.ticks(6)
+	.tickSize(-width, 0, 0)
+	.tickFormat("");
+
+// Create zoom handler : defines the limits and attaches the callback (here zoom_actions)
+var zoom_handler = d3.zoom()
+    //.scaleExtent([1, 10])
+    .translateExtent([[0, -Infinity], [width, height]])
+    .extent([[0, 0], [width, height]])
+    .on('zoom', zoom_actions);
+
+
+// function converting the array of energy and power into array of x and y
+// thanks to x and y scales defined above, and updated at each modification
+var line_cost = d3.line()
+    .x(function(d) { return x(d.dt); }) // { return xt(d.dt); })
+    .y(function(d) { return yt(d.cost); });
+
+
+// Define the domain extent of the input data of the scales
+x.domain([1,8760]);
+// y.domain is variable and thus called in Update
+
+
+// Add svg group representing X axis
+// Calls xAxis defined above.
+// Translated to be shown below the graph
+// Uses a class name to be easily found
+g.append('g')
+    .attr('class', 'mon_axe_des_x')
+    .attr('transform', 'translate(0,' + height + ')')
+    .call(xAxis)
+    .append('text')
+    .attr('transform', 'translate(' + width + ', 0)')
+    .attr('dy', '-0.71em')
+    .attr('text-anchor', 'end')
+    .attr('fill', '#000')
+    .text('Timescale \u0394t');
+
+// Add svg group representing Y axis
+// Calls yAxis defined above.
+// Adds a text to write 'Power (W)'.
+g.append('g')
+    .attr('class', 'mon_axe_des_y')
+    .call(yAxis)
+    .append('text')
+    .attr('fill', '#000')
+    .attr('transform', 'rotate(-90)')
+    .attr('y', 6)
+    .attr('dy', '0.71em')
+    .attr('text-anchor', 'end')
+	.attr('name','cost_per_service');
+
+g.append('g')         
+    .attr('class', 'grid')
+	.call(yAxis1);
+
+g.append('text')
+	.attr('class', 'label_cost_elec')
+	.attr('clip-path','url(#clip)');
+
+var circle = g.append('circle')
+    .attr("r", 3.5)
+	.style('display','none');
+
+// blank rectangle, used to catch mouse movement to recalculate tooltips.
+g.append('rect')
+	.attr('id','white_rect')
+	.attr('width',width)
+	.attr('height',height)
+	.style('opacity',0)
+	.on('click',click_tooltips)
+	.on('mousemove',update_tooltips)
+	.on('mouseout',close_tooltip);
+
+Update();
+
+
+// Fills the color array with the same number of colors as there are storages in storage_data
+function fill_colors() {
+	let n = storage_data.length;
+	colors = [];
+	faint_colors=[];
+	for (let i=0;i<n;i++) {
+		colors.push('hsl('+i*360/n+',100%,40%)');
+		faint_colors.push('hsl('+i*360/n+',100%,80%)');
+		}
+	colors.push('black');
+};
+
+var chosen=-1;
+
+function update_tooltips() {
+
+	let m=d3.mouse(d3.select('#white_rect').node());
+	let x_page=d3.event.pageX, // x and y in the page
+		y_page=d3.event.pageY;
+	let x0=x_page-m[0], // coordinates in the page of the corner of the graph rectangle
+		y0=y_page-m[1];
+
+	let p_chosen=[0,0];	p_chosen.distance=50;
+
+	chosen=-1;
+	g.selectAll('.cost_path').each( function(d,i) {
+		p=closestPoint(this,m); // point closest to the mouse
+		if (p.distance<p_chosen.distance) {
+			p_chosen=p;
+			chosen=i;
+		}
+	});
+
+	if (chosen>=0) {
+		close_tooltip();
+		circle.attr('cx', p_chosen[0]).attr('cy', p_chosen[1])
+			.style('display','block')
+			.style('fill',colors[chosen]);
+
+		let sname=storage_data[chosen].name;
+		let a_data=alpha_data[chosen];
+		let dt=x.invert(p_chosen[0]);
+		let d=calculate_cost(a_data.alpha,a_data.storage_chpower,dt,storage_data[chosen]);
+		let text='<b>'+sname +'</b><br>'
+			+dt_readable(dt)+' <br>'
+			+d['cost'].toFixed(1) +' '+cost_unit +'/MWh <br>';
+		let storbox=d3.selectAll('.storbox')
+			.filter(function(dd){return dd['name']==sname;}) // Find the right storage box
+		if ('repartition' in d) // Not defined for oversizing alone
+			d['repartition'].forEach(function(d){
+				text+='- '+d['name']+': '+d['contribution'].toFixed(1) +' '+cost_unit +'/MWh <br>';
+				let devbox=storbox.selectAll('.devbox')
+					.filter(function(dd){
+						return dd['name']==d['name'];
+					}); // Find the right device box
+				devbox.selectAll('[name=lbox]').style('background-color',function(dd,i) {
+					return i==d['used_life']?'#c0c0c0':null;
+				});
+				let costbox=devbox.selectAll('[name=cost'+d['used_cost']+'box]')
+				costbox.style('background-color','#c0c0c0');
+			});
+		d3.select('.tooltips')
+			.style('background-color',faint_colors[chosen])
+			.style('left', x0+p_chosen[0]+10 + 'px')
+			.style('top', y0+p_chosen[1]+10+'px')
+			.html(text)
+			.style('display', 'block');
+		d3.selectAll('.cost_path').style('opacity',function(d,i){return (i==chosen)?1:0.5;});
+	}
+	else
+		close_tooltip();
+}
+
+function click_tooltips() {
+	if (chosen>=0 && 'devices' in storage_data[chosen])
+		show_storage(chosen);
+}
+
+function close_tooltip() {
+	d3.select('.tooltips')
+		.style('display','none');
+	circle.style('display','none');
+	d3.selectAll('.cost_path').style('opacity',function(d,i) {return i<storage_data.length?0.5:1});
+	d3.selectAll('[name=lbox]').style('background-color',null);
+	d3.selectAll('[name=costEbox]').style('background-color',null);
+	d3.selectAll('[name=costPbox]').style('background-color',null);
+}
+
+function closestPoint(pathNode, point) {
+  var pathLength = pathNode.getTotalLength(),
+      precision = 8,
+      best=[0,0],
+      bestLength,
+      bestDistance = Infinity;
+
+  // linear scan for coarse approximation
+  
+  for (var scan, scanLength = 0, scanDistance; scanLength <= pathLength; scanLength += precision) {
+	scan = pathNode.getPointAtLength(scanLength);
+	// WEC : specific for these curves with increasing x and which can begin outside the clip rectangle at x<0,
+	if (scan.x<0) 
+		continue;
+	// WEC : specific for these curves with increasing y and which can only quit the clip rectangle at y<0,
+	if (scan.y<0) 
+		break;
+	scanDistance = distance2(scan);
+	if (scanDistance < bestDistance) {
+		best = scan, bestLength = scanLength, bestDistance = scanDistance;
+	}
+  }
+
+  // binary search for precise estimate
+  precision /= 2;
+  while (precision > 0.5) {
+    var before,
+        after,
+        beforeLength,
+        afterLength,
+        beforeDistance,
+        afterDistance;
+    if ((beforeLength = bestLength - precision) >= 0 &&
+		(before = pathNode.getPointAtLength(beforeLength)).x>=0 &&
+		(beforeDistance = distance2(before)) < bestDistance) {
+		best = before, bestLength = beforeLength, bestDistance = beforeDistance;
+    }
+	else if ((afterLength = bestLength + precision) <= pathLength &&
+		(after = pathNode.getPointAtLength(afterLength)).y>0 &&
+		(afterDistance = distance2(after)) < bestDistance) {
+		best = after, bestLength = afterLength, bestDistance = afterDistance;
+    }
+	else {
+      precision /= 2;
+    }
+  }
+
+  best = [best.x, best.y];
+  best.distance = Math.sqrt(bestDistance);
+  return best;
+
+  function distance2(p) {
+    var dx = p.x - point[0],
+        dy = p.y - point[1];
+    return dx * dx + dy * dy;
+  }
+}
+
+
+// General idea:
+// The inputs change the variables and call Update
+// Update changes whatever may depend upon the input variables.
+function Update() {
+	// Variable cost_unit
+	// => change the labels /MWh and /MWh
+	d3.selectAll('[name=cost_per_energy]')
+		.html(function(d) {str=cost_unit+'/MWh'; if (d!=undefined) str+='<sub>'+d['cost_reference']+'</sub>'; return str;});
+	d3.selectAll('[name=cost_per_service]')
+		.html(function(d) {str='Cost of flexibility service ('+cost_unit+'/MWh)'; return str;});
+	d3.selectAll('[name=cost_per_power]')
+		.html(function(d) {str=cost_unit+'/MW'; if (d!=undefined) str+='<sub>'+d['cost_reference']+'</sub>'; return str;});
+	// Change the value of electricity cost slider
+    d3.select('#elec_cost_slider')
+		.property('max',elec_cost_max[cost_unit])
+		.property('value',elec_cost[cost_unit]);
+    d3.select('#elec_cost_input')
+		.property('max',elec_cost_max[cost_unit])
+		.property('value',elec_cost[cost_unit]);
+	// Change the values of cost of each device
+	d3.selectAll('[name=costEinput]')
+		.property('value',function(d) { return d[cost_unit];});
+	d3.selectAll('[name=costPinput]')
+		.property('value',function(d) { return d[cost_unit];});
+	// Change y domain, useful if values in different units are not of the same order of magnitude
+	y.domain([0, elec_cost_max[cost_unit]]);
+    yt = d3.zoomTransform(svg.node()).rescaleY(y); // change yt accordingly
+    yAxis.scale(yt); 
+    yAxis1.scale(yt); 
+    g.select('.mon_axe_des_y').call(yAxis); // redraw the axis
+    g.select('.grid').call(yAxis1); // redraw the grid
+
+	// Variable betap
+	d3.select('#betap_slider')
+		.property('value',betap);
+	d3.select('#betap_input')
+		.property('value',betap);
+	d3.select('.ma_courbe_betap')
+		.datum([[0.,1.0-betap],[0.5,1.0-betap],[0.5,1.0+betap],[1.0,1.0+betap]])
+		.attr('d', betaline); // La fonction qui convertit les données en coordonnées
+	d3.select('.label_betap')
+		.attr('x',xb(0.75))
+		.attr('y',yb(1.1+betap));
+
+	// Variable betac
+	d3.select('#betac_slider')
+		.property('value',betac);
+	d3.select('#betac_input')
+		.property('value',betac);
+	d3.select('.ma_courbe_betac')
+		.datum([[0.,1.0-betac],[0.5,1.0-betac],[0.5,1.0+betac],[1.0,1.0+betac]])
+		.attr('d', betaline); // La fonction qui convertit les données en coordonnées
+	d3.select('.label_betac')
+		.attr('x',xb(0.05))
+		.attr('y',yb(1.1-betac));
+
+	// Service rectangle
+	if (betap>betac) {
+		d3.select('#service_rectangle')
+			.attr("x",xb(0))
+			.attr("y",yb(1-betac))
+			.attr("width",xb(0.5)-xb(0))
+			.attr("height",yb(1-betap)-yb(1-betac));
+	} else {
+		d3.select('#service_rectangle')
+			.attr("x",xb(0.5))
+			.attr("y",yb(1+betac))
+			.attr("width",xb(1)-xb(0.5))
+			.attr("height",yb(1+betap)-yb(1+betac));
+	}
+	// Variable cost_reference of each device
+	d3.selectAll('[name=cost_ref]')
+		.text(function(d) {
+			return d['cost_reference'];}
+		);
+
+	draw_curves();
+
+	// Update legend
+	var cur=legend.selectAll('.legend-item')
+		.data(storage_data);
+	cur.exit().remove();
+	var a=cur.enter() // Make the new legends for entering data
+		.append('div')
+		.attr('class','legend-item');
+	a.append('svg')
+		.attr('class','legend-line')
+		.attr('width', 50)
+		.attr('height', 3);
+	a.append('div');
+	a=a.merge(cur);  // Avoid duplication of code between enter and update parts.
+	a.each(function(d,i){ // Didi not find another way to get i...
+		d3.select(this).selectAll('svg').style('background-color',colors[i]);
+	});
+	a.selectAll('div')
+		.html(function(d) {return d.name;});
+		
+	d3.select('.label_cost_elec')
+		.attr('x',x(500))
+		.attr('y',yt(elec_cost[cost_unit])-5)
+		.text('Electricity cost: '+parseFloat(elec_cost[cost_unit]).toFixed(1)+' '+cost_unit +'/MWh');
+
+};
+
+
+function draw_curves() {
+
+	calculate_line_data();
+	transpose_tab_data();
+
+	var cur=g.selectAll('.all_paths') 
+		.data(line_data);
+	// Now cur is the selection to be updated (path exists, data exists)
+	// cur.enter() is the selection of non-existing paths, where data exists
+	// cur.exit() is the selection of existing paths with no data
+
+	cur.exit().remove(); // Remove elements if there is n o more data for them
+
+	cur.enter() 
+		.append('path') // Create new elements for new data
+		.attr('class', function(d,i) {return i<storage_data.length ? 'cost_path' : 'ref_path';})
+		.classed('all_paths',true)
+		.style('stroke', function(d,i) { return colors[i]; })
+		.attr('clip-path','url(#clip)')
+		.merge(cur) // The following applies both to new elements and to elements to update (avoids code duplication)
+		.attr('d', line_cost) // The function which converts data to coordinates, triggers the drawing
+		;
+
+	// Update table
+	table_body.selectAll('tr').remove(); // Simpler to begin with a blank table...
+	let rows = table_body.selectAll('tr')
+	    .data(tab_data)
+		.enter().append('tr');
+
+	let cells = rows.selectAll('td')
+	    .data(d => d)
+		.enter()
+		.append('td')
+		.text(d => d);
+	table_body.select('tr').append('th').attr('rowspan',tab_data.length).text('Order of merit of storages').lower();
+};
+
+// Converts form a format [storage][time]
+// to a format [nth-best][time]
+function transpose_tab_data() {
+	let new_data=[];
+	for (j=0;j<storage_data.length;j++)
+		new_data.push([]);
+	for (i=0;i<times.length;i++) {
+		tab_data.sort(function(a,b) {return a[i]['cost']-b[i]['cost'];});
+		for (j=0;j<storage_data.length;j++)
+			new_data[j].push((j>0?'> ':'')+tab_data[j][i].name);
+	}
+	tab_data=new_data;
+}
+
+function calculate_line_data() {
+	line_data=[];
+	tab_data=[];
+	let t_list=[];
+	let tt_list=[1,24,168,730,8760];
+	for (let it=-14;it<183;it++)
+		t_list.push(Math.exp(0.05*it));
+	storage_data.forEach(function(d,i) { // Iterate over storages
+		let the_line=[];
+		// Calculate storage efficiency from devices efficiency
+		let efficiency = 1;
+		if ('devices' in d)
+			d['devices'].forEach(function(d) { efficiency *= d['efficiency'];	});
+		else // To deal with oversizing alone, without storage
+			efficiency=0;
+		// Calculate alpha and storage charge power using the formula from the article
+		let bp=0;
+//		let bc=0;
+		if	(betap>=betac) {
+			bp=betap;
+//			bc=betac;
+		} else {
+			bp=-betap;
+//			bc=-betac;
+		}
+
+//		let alpha = (bc-bp)/( (efficiency+1)/(efficiency-1) + bp);
+//		let storage_chpower = bp-bc + alpha*(1+bp); // Easy to divide by bp-bc
+//		let mean_service=(bp-bc)/2; // MWh of service (area where consumption>production) per hour of time, averaged over delta_t
+
+// We calcultate alpha and storage_chpower already divided by mean_service, as it allows formula simplification and avoids division by zero
+// These two values are not dependent on delta_t, and surprisingly not dependant on betac (only of the sign of betap-betac)
+		let alpha = 2*(1-efficiency) / ( 1+efficiency - bp*(1-efficiency));
+		let storage_chpower = 2 + alpha*(1+bp);
+
+		let a_data={};
+		a_data['alpha']=alpha;
+		a_data['storage_chpower']=storage_chpower;
+		alpha_data.push(a_data);
+
+		for (let it=0;it<t_list.length;it++) {
+			tmp=calculate_cost(alpha,storage_chpower,t_list[it],d);
+			the_line.push(tmp);
+		}
+		line_data.push(the_line);
+		
+		let the_tab=[];
+		for (let it=0;it<tt_list.length;it++) {
+			tmp=calculate_cost(alpha,storage_chpower,tt_list[it],d);
+			tmp['name']=d['name'];
+			the_tab.push(tmp);
+		}
+		tab_data.push(the_tab);
+	});
+
+	{ // Additional curve for production cost
+		let the_line=[];
+		the_line.push({'dt':0.5,'cost':elec_cost[cost_unit]});
+		the_line.push({'dt':8760,'cost':elec_cost[cost_unit]});
+		line_data.push(the_line);
+	}
+}
+
+
+function calculate_cost(alpha,storage_chpower,dt,d) { // d is the data of the storage
+
+	let oversizing_cost_per_service = alpha*elec_cost[cost_unit];
+	if (d==undefined || !('devices' in d)) // No storage
+		return {'dt':dt,'cost':oversizing_cost_per_service};
+		
+	// For each value of delta_t
+	let total_cost_per_service=oversizing_cost_per_service;
+	let device_chpower=storage_chpower;
+	let half_dt = dt/2;
+	let dev_cost_per_service=[];
+	let used_cost=[], used_life=[];
+	d['devices'].forEach(function(d,i) { // iterate over devices
+		// Calculate power and energy in charge or discharge according to cost_reference
+		// Mef : they are all divided by mean_service (as storage_chpower)
+		let eff = d['efficiency'];
+		let power_need = device_chpower;
+		device_chpower *= eff;
+		let energy_need = power_need*half_dt;
+		if (d['cost_reference']=='out') {
+			power_need *= eff; 
+			energy_need *= eff;
+		}
+
+		// Calculate investment cost (capex)
+		let energy_cost = 'cost of energy' in d ?
+			d['cost of energy'][cost_unit] * energy_need : 0;
+		let power_cost = 'cost of power' in d ?
+			d['cost of power'][cost_unit] * power_need : 0;
+		let capex_cost=0;
+		if (energy_cost>power_cost){
+			capex=energy_cost;
+			capex_cost='E';
+		} else {
+			capex=power_cost;
+			capex_cost='P';
+		}
+			
+		// Calculate device cost per hour, using life limits
+		// It is the cost of the device (€, kgCO2,...) divided by the service of the storage (MWh) over the life of the device
+		// TODO check there is no confusion between storage and device energy/power
+		dev_cost_per_service[i]=0;
+		d['life_limits'].forEach(function(d,j) {
+			if (d['life_unit']=='years') {
+				let Ycost=capex/(d['life']*8760); // capex divided by lifetime, easy
+				if (Ycost>dev_cost_per_service[i]) {
+					dev_cost_per_service[i]=Ycost;
+					used_cost[i]=capex_cost;
+					used_life[i]=j;
+				}
+			}
+			else if (d['life_unit']=='eq. hours at full power') {
+				let Hcost=power_cost/(2*d['life']); // Power is only counted during charge or discharge.
+				// If the device withstand x hours at full power, it will live 2x hours of cycling at full power.
+				// If used at half power (e.g. because sized by energy), it will cost twice as much but will live twice longer => energy cost is not relevant.
+				if (Hcost>dev_cost_per_service[i]) {
+					dev_cost_per_service[i]=Hcost; // factor 2 because only charge or discharge time counts, not both
+					used_cost[i]='P';
+					used_life[i]=j;
+				}
+			}
+			else if (d['life_unit']=='eq. full cycles') {
+				let Ccost=energy_cost/(d['life']*dt);
+				// If used at half energy (e.g. because sized by power), it will cost twice as much but will live twice longer => power cost is not relevant
+				if (Ccost>dev_cost_per_service[i]) {
+					dev_cost_per_service[i]=Ccost;
+					used_cost[i]='E';
+					used_life[i]=j;
+				}
+			}
+			else
+				throw 'Unknown life unit: '+d['life_unit'];
+		});
+		// Add cost of this device to total cost
+		total_cost_per_service += dev_cost_per_service[i];
+	});
+	
+	let repartition=[];
+	for (let dev=0;dev<dev_cost_per_service.length;dev++)
+		repartition.push({'name':d['devices'][dev]['name'],'contribution':dev_cost_per_service[dev],'used_cost':used_cost[dev],'used_life':used_life[dev]});
+	repartition.push({'name':'oversizing','contribution':oversizing_cost_per_service});
+	
+	return {'dt':dt,'cost':total_cost_per_service,'repartition':repartition}
+}
+
+function dt_readable(dt) {
+	if (dt<24)
+		return dt.toFixed(1)+' hours';
+	else if (dt<168)
+		return (dt/24).toFixed(1)+' days';
+	else if (dt<730)
+		return (dt/168).toFixed(1)+' weeks';
+	else if (dt<8760)
+		return (dt/730).toFixed(1)+' months';
+	else
+		return (dt/8760).toFixed(1)+' years';
+}
+
+// Callback function called when zoom events occur
+function zoom_actions() {
+    var trans = d3.event.transform;
+	trans.x=0;
+	trans.y=(1-trans.k)*height; // No translation !
+    // Creates a new scale in place of x and y
+    // xt = trans.rescaleX(x);
+    yt = trans.rescaleY(y);
+    // Attaches these scales to the axis
+    // xAxis.scale(xt);
+    yAxis.scale(yt);
+    yAxis1.scale(yt);
+
+	// Redraw the data curve
+ 	g.selectAll('.all_paths')
+			.data(line_data)
+			.attr('d',line_cost);
+
+	// Redraw the label
+	d3.select('.label_cost_elec')
+		.attr('y',yt(elec_cost[cost_unit])-5)
+
+    // Redraw the axis
+    g.select('.mon_axe_des_x').call(xAxis);
+    g.select('.mon_axe_des_y').call(yAxis);
+    g.select('.grid').call(yAxis1);
+	close_tooltip();
+}
+
+// Seems to be here where the callback is really attached
+zoom_handler(svg);
+
+
+// tab management
+var tabLinks = [];
+var contentDivs = [];
+
+{ // Tabs management
+
+	// Grab the tab links and content divs from the page
+	var tabListItems = document.getElementById('tabs').childNodes;
+	for ( var i = 0; i < tabListItems.length; i++ ) {
+		if ( tabListItems[i].nodeName == "LI" ) {
+			var tabLink = getFirstChildWithTagName( tabListItems[i], 'A' );
+			var id = getHash( tabLink.getAttribute('href') );
+			tabLinks[id] = tabLink;
+			contentDivs[id] = document.getElementById( id );
+		}
+	}
+
+	current_hash='tool';
+	//  w_hash=getHash(window.location.hash);
+	//  if (w_hash in tabLinks)
+	//	current_hash=w_hash;
+
+	// Assign onclick events to the tab links, and
+	// highlight the first tab
+	for ( var id in tabLinks ) {
+		tabLinks[id].onclick = showTab;
+		//tabLinks[id].onfocus = function() { this.blur() };
+		if ( id==current_hash) tabLinks[id].className = 'selected';
+		i++;
+	}
+
+	// Hide all content divs except the tool
+	for ( var id in contentDivs ) {
+		if ( id!=current_hash ) contentDivs[id].className = 'tabContent hide';
+		i++;
+	}
+
+	function showTab() {
+	  var selectedId = getHash( this.getAttribute('href') );
+
+	  // Highlight the selected tab, and dim all others.
+	  // Also show the selected content div, and hide all others.
+		for ( var id in contentDivs ) {
+			if ( id == selectedId ) {
+				tabLinks[id].className = 'selected';
+				contentDivs[id].className = 'tabContent';
+			} else {
+				tabLinks[id].className = '';
+				contentDivs[id].className = 'tabContent hide';
+			}
+		}
+	  // Stop the browser following the link
+	  return false;
+	}
+
+	function getFirstChildWithTagName( element, tagName ) {
+		for ( var i = 0; i < element.childNodes.length; i++ ) {
+			if ( element.childNodes[i].nodeName == tagName ) return element.childNodes[i];
+		}
+	}
+
+	function getHash( url ) {
+		var hashPos = url.lastIndexOf ( '#' );
+		return url.substring( hashPos + 1 );
+	}
+}
+</script>
+
+</body>
+<!-- Les scripts pourraient être hors du body, mais pas le svg direct -->
+
+
