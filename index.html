@@ -187,17 +187,6 @@ div.boxtitle {
 	margin:auto;
 }
 
-table, th {
-	border-collapse: collapse;
-	border: 1px solid black;
-	text-align: center;
-}
-td {
-	border-left: 1px solid black;
-	text-align: center;
-	padding: 3px;
-}
-
 .legend {
     display: flex;
 	justify-content: center;
@@ -309,6 +298,14 @@ td {
 	limit in equivalent full cycles will only have effect if the cost of energy is defined.<br>
 	All the cost calculations over the life of a device are performed without any discount rate.
 	</p>
+	<p>Th efollowing sources were used to prefill input data :
+	<ul>
+		<li>[3][4][5] for Li-ion batteries</li>
+		<li>[4][5] for pumped hydro</li>
+		<li>[7] for hydrogen (details in the source file)</li>
+		<li>[9][10][11] for electricity cost</li>
+	</ul>
+	</p>
 </div>
 
 <div class="tabContent" id="tool">
@@ -336,61 +333,101 @@ td {
 	<h4>What can be seen on the results</h4>
 	<ol>
 
-		<li><emph>The cost of flexibility rises sharply for large timescales of intermittency </emph>, as a larger amount of
-		storage has to be built and performs fewer cycles.<br>
-		In particular, and whatever the technology considered, storing excess electricity in summer to use it in winter is very
-		expensive.</li>
+		<li style="margin-bottom:10px"><b>The cost of flexibility service rises sharply for large timescales of intermittency.</b><br>
+		For longer timescales, a larger amount of storage is required and it performs fewer cycles.<br>
+		In particular, and whatever the technology considered, storing excess electricity in summer to use it in winter is
+		very expensive.</li>
 
-		<li>In the presence of two storage technologies, one presenting a better efficiency, and the other one being cheaper,<br>
-		<emph>the storage with better efficiency is to be preferred for short timescales, while the cheaper storage is to be
-		preferred for long timescales.</emph><br>
+		<li style="margin-bottom:10px"><b>A storage with better efficiency is to be preferred for short timescales, while a
+		cheaper storage is to be preferred for long timescales.</b><br>
+		As explained above, the cost increases sharply with timescale but is less of a concern for short timescales.<br>
+		In this case, the efficiency becomes the driving parameter as many cycles are performed each year.<br>
 		More details on this point are available in [2].</li>
 	
-		<li><emph>A high cost of electricity is particularly detrimental to storages with low efficiency</emph><br>
-		Indeed, the higher are the losses, the larger is the required oversizing of production.</li>
+		<li style="margin-bottom:10px"><b>A high cost of electricity is particularly detrimental to storages with low
+		efficiency.</b><br>
+		Indeed, the higher are the losses, the larger is the consumption of electricity for a given flexibility service.</li>
 
-		<li><emph>Low efficiency storages are less suited to high production intermittency</emph>, as together they require an
-		even larger oversizing of production. Production intermittency can be thought of as linked to renewables penetration.<br>
-		On the contrary, for a lossless storage (100% efficiency), the cost of flexibility is independent of the production
-		intermittency, as the storage size just scales accordingly and no production oversizing is required.</li>
+		<li style="margin-bottom:10px"><b>Low efficiency storages are less suited to high production intermittency.</b><br>
+		Production intermittency can be thought of as linked to renewables penetration.<br>
+		For a lossless storage (100% efficiency), the cost of 1 MWh of flexibility service is independent of the production
+		intermittency, as the storage size just scales accordingly and no production oversizing is required.<br>
+		On the contrary, a low efficiency storage requires production oversizing, and this oversizing rises sharply when
+		production intermittency is high <i>and</i> efficiency is low.</li>
 		
-		<li><emph>The consumption intermittency has little impact</emph>, except to indicate whether electricity is missing while
-		production is high, or while production is low.<br>
-		Of course, the cost is higher in the second case.</li>
+		<li><b>The consumption intermittency has little impact on the cost of flexibility service.</b><br>
+		The storage size just scales accordingly to the required flexibility service.<br>
+		However, the cost is not the same if electricity is missing while production is low, or while production is high.<br>
+		Of course, the cost is higher in the first case.</li>
 	
 	</ol>
 	<p>In each of the above sentences, 'cost' can be substituted with 'environmental impact'.</p>
+	<p>Beware also that we are talking of the cost of flexibility service, not the cost of electricity.<br>
+	For the same cost of flexibility service, if the level of intermittency increases, then the cost of electricity delivered
+	to the customer also increases.</p>
 
 	<h4>Limits of this tool</h4>
-	<ul>
-		<li><emph>The physical limits in the development of storages technologies are not taken into account.</emph><br>
-		For example, the number of sites for pumped hydro or the ressources in cobalt for Li-ion batteries are supposed infinite.</li>
-		<li>The only means of flexibility considered is the storage of electricity.<br>
+	<ol>
+		<li style="margin-bottom:10px"><b>The physical limits in the deployment of technologies are not taken into account.</b><br>
+		For example, the number of sites for pumped hydro, the available surface for solar panels, or the ressources
+		in cobalt for Li-ion batteries are supposed infinite.<br>
+		In fact, taking into account these physical limits would be highly dependent on the country or area considered.</li>
+		<li style="margin-bottom:10px"><b>The only means of flexibility considered is the storage of electricity.</b><br>
 		Obviously, other flexibility means may be more efficient depending on the time scale.<br>
-		In particular, <emph>flexibility is today efficiently provided by dispatchable production</emph> (fossile fuels, hydro, or nuclear depending on the country).</li>
-		<li>The electricity system is considered isolated, while <emph>an integrated approach of the energy system is necessary.</emph><br>
-		For example, excess electricity could be converted into other forms of energy (e.g. heat or fuel) which are easier to store but not easily converted back into electricity.
-		At a later time when heat or fuel is used, it reduces the need for electricity.<br>
-		That way, the flexibility is obtained by changing the consumption pattern rather than the production pattern.</li>
-		<li>Production and consumption patterns are far from real ones.<br>
-		Further studies could be dedicated to specific scenarios in specific countries, which is not the goal of the present tool.<br>
-		Furthermore, <emph>it does not allow to understand the interrelationship between flexibility at short time scales and at large times scales.</emph><br>
-		Would a storage for long time scales necessarily manage also the short time scales ? Or would the optimum include a combination of storages ?<br>
+		In particular, flexibility is up to now efficiently provided by dispatchable production (fossile fuels, hydro, or
+		nuclear depending on the country).<br>
+		Some scenarios heavily rely on the flexibility provided by demand management and by neighbouring countries</li>
+		<li style="margin-bottom:10px"><b>The electricity system is considered isolated.</b><br>
+		An integrated approach of the energy system would benecessary.<br>
+		For example, excess electricity could be converted into other forms of energy (e.g. heat or fuel) which are easier to
+		store but not easily converted back into electricity. At a later time when heat or fuel is used, it reduces the need
+		for electricity.<br>
+		<li style="margin-bottom:10px"><b>Production and consumption patterns are far from real ones.</b><br>
+		Further studies could be dedicated to specific scenarios in specific countries, which is not the goal of the present
+		tool.<br>
+		Furthermore, it does not allow to understand the relationship between flexibility at short time scales and at large
+		times scales : would a storage for long time scales necessarily manage also the short time scales ? Or would the
+		optimum include a combination of storages ?<br>
 		Such issues are tackled in [2].
 		</li>
-	</ul>
+	</ol>
 
 </div>
 
 <div class="tabContent" id="references">
-	<p>[1] A. Clerjon and F. Perdu, <a href='https://dx.doi.org/10.1039/c8ee01940a'>Matching intermittency and electricity storage characteristics through time scale analysis: an energy return on investment comparison</a>, <i>Energy Environ. Sci.</i>, 2019,<b>12</b>, 693-705<br>
-	[2] A. Clerjon and F. Perdu, <a href='https://easychair.org/publications/preprint/7c9h'>Matching intermittent electricity supply and load with energy storage: An optimization based on a time scale analysis</a>, to be published in ECOS 2020</p>
+	<p>[1] A. Clerjon and F. Perdu, <a href='https://dx.doi.org/10.1039/c8ee01940a'>
+	Matching intermittency and electricity storage characteristics through time scale analysis: an energy return on investment
+	comparison</a>, <i>Energy Environ. Sci.</i>, 2019,<b>12</b>, 693-705<br>
+	[2] A. Clerjon and F. Perdu, <a href='https://easychair.org/publications/preprint/7c9h'>
+	Matching intermittent electricity supply and load with energy storage: An optimization based on a time scale analysis</a>,
+	to be published in ECOS 2020<br>
+	[3] A. Genovese et al., <a href='https://www.mdpi.com/2032-6653/7/4/570'>
+	On the energy efficiency of quick DC vehicle battery charging</a>,
+	<i>World Electric Vehicle Journal</i>, 2015,<b>7</b>, 570-576<br>
+	[4] K. Mongird et al., <a href='https://www.osti.gov/biblio/1573487'>
+	Energy Storage Technology and Cost Characterization	Report</a>, 2019<br>
+	[5] IRENA, <a href='https://www.irena.org/publications/2017/Oct/Electricity-storage-and-renewables-costs-and-markets'>
+	Electricity storage and renewables: Costs and markets to 2030</a>, 2017<br>
+	[6] Fuel Cells Hydrogen 2 Joint Undertaking,
+	<a href='https://www.fch.europa.eu/sites/default/files/MAWP%20final%20version_endorsed%20GB%2015062018%20%28ID%203712421%29.pdf'>
+	Addendum to the Multi - Annual Work Plan 2014 - 2020</a>, 2018<br>
+	[7] Department of Energy,
+	<a href='https://www.energy.gov/eere/fuelcells/downloads/fuel-cell-technologies-office-multi-year-research-development-and-22'>
+	Fuel Cell Technologies Office Multi-Year Research, Development, and Demonstration Plan</a>, 2015<br>
+	[8] IRENA, <a href='https://www.irena.org/publications/2018/Sep/Hydrogen-from-renewable-power'>
+	Hydrogen from renewable	power: Technology outlook for the energy transition</a>, 2018<br>
+	[9] Cour des comptes,
+	<a href='https://www.ccomptes.fr/sites/default/files/EzPublish/20140527_rapport_cout_production_electricite_nucleaire.pdf'>
+	Le coût de production de l’électricité nucléaire</a>, 2014<br>
+	[10] IEA, <a href='https://www.iea.org/reports/nuclear-power-in-a-clean-energy-system'>
+	Nuclear Power in a Clean Energy System</a>, 2019<br>
+	[11] ADEME, <a href='https://www.ademe.fr/couts-energies-renouvelables-recuperation-france'>
+	Coûts des énergies renouvelables et de récupération en France</a>, 2020</p>
 </div>
 
 <div class="tabContent" id="about">
-	<p><u>Authors</u> : F. Perdu and A. Clerjon</p>
-	<p><b>Not to be distributed : data not yet validated</b></p>
-	<p>v0.6, 19/05/2020, tested on :
+	<p>Authors: <a href="mailto:fabien.perdu@cea.fr">F. Perdu</a> and <a href="mailto:arthur.clerjon@cea.fr">A. Clerjon</a></p>
+	<p>v0.7, 25/06/2020, tested on :
 	<ul>
 	<li>Chrome/Chromium 80.0.3987.149</li>
 	<li>Firefox 74.0</li>
@@ -410,7 +447,7 @@ td {
 // perhaps keeping actual variable names as pointers towards inside the signe variable
 // or save in json the list of variables
 
-var cost_unit_list = ['€','kg(CO2)']; // Can be changed
+var cost_unit_list = ['€']; // ['€','kg(CO2)']; // Can be changed
 var cost_unit = '€'; // Can be changed
 
 var elec_cost = { // Value at production
@@ -470,19 +507,19 @@ var storage_data = [
 				],
 				'cost_reference': 'out',
 				'cost of energy':{ // /MWh
-					'€':160000,
+					'€':165000,
 					'kg(CO2)':0
 				}
 			},
 			{
 				'name': 'turbine',
-				'efficiency': 0.75,
+				'efficiency': 0.8,
 				'life_limits': [
 					{'life': 60, 'life_unit': 'years'}
 				],
 				'cost_reference': 'out',
 				'cost of power':{ // /MW
-					'€':2000000,
+					'€':2600000,
 					'kg(CO2)':0
 				}
 			}
@@ -493,7 +530,7 @@ var storage_data = [
 		'devices': [
 			{
 				'name': 'alcaline electrolyser', // Table 2.1
-				'efficiency': 0.6666, // PCI(H2) /electricity, based on 50kWh/kg(H2)
+				'efficiency': 0.6666, // LHV(H2) /electricity, based on 50kWh/kg(H2)
 				'life_limits': [
 					{'life': 80000, 'life_unit': 'eq. hours at full power'}
 				],
@@ -552,12 +589,10 @@ fill_colors();
 
 var betaline, xb, yb;
 var svg;
-var table_body;
 var times=['1 hour', '1 day', '1 week', '1 month', '1 year'];
 
 line_data=[];
 alpha_data=[];
-tab_data=[];
 
 { // instanciation of all the user data inputs
 
@@ -798,14 +833,6 @@ tab_data=[];
 		
 	legend =tmp0.append('div')
 		.attr('class','legend');
-	
-	{
-		let tab=tmp0.append('table');
-		let table_head=tab.append('thead').append('tr');
-		table_head.append('th').text('Timescale \u0394t');
-		times.forEach(function(d) {table_head.append('th').text(d);})
-		table_body=tab.append('tbody');
-	}
 	
 	{ // Storage parameters
 
@@ -1485,7 +1512,6 @@ function Update() {
 function draw_curves() {
 
 	calculate_line_data();
-	transpose_tab_data();
 
 	var cur=g.selectAll('.all_paths') 
 		.data(line_data);
@@ -1504,38 +1530,11 @@ function draw_curves() {
 		.merge(cur) // The following applies both to new elements and to elements to update (avoids code duplication)
 		.attr('d', line_cost) // The function which converts data to coordinates, triggers the drawing
 		;
+ };
 
-	// Update table
-	table_body.selectAll('tr').remove(); // Simpler to begin with a blank table...
-	let rows = table_body.selectAll('tr')
-	    .data(tab_data)
-		.enter().append('tr');
-
-	let cells = rows.selectAll('td')
-	    .data(d => d)
-		.enter()
-		.append('td')
-		.text(d => d);
-	table_body.select('tr').append('th').attr('rowspan',tab_data.length).text('Order of merit of storages').lower();
-};
-
-// Converts form a format [storage][time]
-// to a format [nth-best][time]
-function transpose_tab_data() {
-	let new_data=[];
-	for (j=0;j<storage_data.length;j++)
-		new_data.push([]);
-	for (i=0;i<times.length;i++) {
-		tab_data.sort(function(a,b) {return a[i]['cost']-b[i]['cost'];});
-		for (j=0;j<storage_data.length;j++)
-			new_data[j].push((j>0?'> ':'')+tab_data[j][i].name);
-	}
-	tab_data=new_data;
-}
-
+ 
 function calculate_line_data() {
 	line_data=[];
-	tab_data=[];
 	let t_list=[];
 	let tt_list=[1,24,168,730,8760];
 	for (let it=-14;it<183;it++)
@@ -1553,15 +1552,15 @@ function calculate_line_data() {
 //		let bc=0;
 		if	(betap>=betac) {
 			bp=betap;
-//			bc=betac;
+/**/			bc=betac;
 		} else {
 			bp=-betap;
-//			bc=-betac;
+/**/			bc=-betac;
 		}
 
 //		let alpha = (bc-bp)/( (efficiency+1)/(efficiency-1) + bp);
 //		let storage_chpower = bp-bc + alpha*(1+bp); // Easy to divide by bp-bc
-//		let mean_service=(bp-bc)/2; // MWh of service (area where consumption>production) per hour of time, averaged over delta_t
+/**/		let mean_service=(bp-bc)/2; // MWh of service (area where consumption>production) per hour of time, averaged over delta_t
 
 // We calcultate alpha and storage_chpower already divided by mean_service, as it allows formula simplification and avoids division by zero
 // These two values are not dependent on delta_t, and surprisingly not dependant on betac (only of the sign of betap-betac)
@@ -1574,18 +1573,11 @@ function calculate_line_data() {
 		alpha_data.push(a_data);
 
 		for (let it=0;it<t_list.length;it++) {
-			tmp=calculate_cost(alpha,storage_chpower,t_list[it],d);
+			tmp = calculate_cost(alpha,storage_chpower,t_list[it],d);
+		//  tmp['cost'] = parseFloat(elec_cost[cost_unit]) + tmp['cost']*mean_service; // To calculate total cost of electricity rather than cost of flexibility
 			the_line.push(tmp);
 		}
 		line_data.push(the_line);
-		
-		let the_tab=[];
-		for (let it=0;it<tt_list.length;it++) {
-			tmp=calculate_cost(alpha,storage_chpower,tt_list[it],d);
-			tmp['name']=d['name'];
-			the_tab.push(tmp);
-		}
-		tab_data.push(the_tab);
 	});
 
 	{ // Additional curve for production cost
@@ -1797,5 +1789,4 @@ var contentDivs = [];
 </script>
 
 </body>
-<!-- Les scripts pourraient être hors du body, mais pas le svg direct -->
 
