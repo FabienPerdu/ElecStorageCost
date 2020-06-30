@@ -269,7 +269,7 @@ div.boxtitle {
 	<h4>Consumption and production input data</h4>
 	<p>It is possible to choose a cost unit which will apply to all costs and allows to use other metrics than economics, for
 	example the GHG emissions.<br>
-	The electricity cost is described by a single value, which is the mean cost of electricity production over the period.<br>
+	The electricity production cost is described by a single value, which is the mean cost of electricity production over the period.<br>
 	The level of intermittency of production and consumption are also tunable, while maintaining the equality of mean
 	production and mean comsumption.<br>
 	A visual representation of the signals is provided, the time scale in abscissa spanning over a full charge-discharge cycle,
@@ -303,7 +303,7 @@ div.boxtitle {
 		<li>[3][4][5] for Li-ion batteries</li>
 		<li>[4][5] for pumped hydro</li>
 		<li>[7] for hydrogen (details in the source file)</li>
-		<li>[9][10][11] for electricity cost</li>
+		<li>[9][10][11] for electricity production cost</li>
 	</ul>
 	</p>
 </div>
@@ -323,7 +323,7 @@ div.boxtitle {
 	<p>Two additional curves are provided for comparison purposes.<br>
 	The first one corresponds to a solution where the production is oversized but the excess is not stored ('Oversizing
 	alone').<br>
-	The second one (dashed line) is simply the mean electricity cost.<br>
+	The second one (dashed line) is simply the mean electricity production cost.<br>
 	Beware that <b><i>the cost of flexibility adds up to the mean electricity cost</i></b>, and does not replace it.
 	</p>
 </div>
@@ -637,7 +637,7 @@ alpha_data=[];
 
 			tmp1.append('div')
 				.attr('class', 'element')
-				.text('Electricity cost');
+				.text('Electricity production cost');
 
 			tmp1.append('input')
 				.attr('class', 'element')
@@ -1504,7 +1504,7 @@ function Update() {
 	d3.select('.label_cost_elec')
 		.attr('x',x(500))
 		.attr('y',yt(elec_cost[cost_unit])-5)
-		.text('Electricity cost: '+parseFloat(elec_cost[cost_unit]).toFixed(1)+' '+cost_unit +'/MWh');
+		.text('Electricity production cost: '+parseFloat(elec_cost[cost_unit]).toFixed(1)+' '+cost_unit +'/MWh');
 
 };
 
